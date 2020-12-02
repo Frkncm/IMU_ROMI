@@ -35,11 +35,11 @@ void imuTask(void) {
   cmp.updateFilter();
 
   //Serial.print(cmp.getFilteredX()); Serial.print(" ");
-  Serial.print(cmp.getFilteredY()); Serial.println(" ");
+  //Serial.print(cmp.getFilteredY()); Serial.println(" ");
   //Serial.print(cmp.getFilteredZ()); Serial.println();
-
+    Serial.print("diss: "); Serial.println(imclc.getDistance());
   if (imclc.updateAcc(cmp.getFilteredY(), imuCalculator::FORWARD)) {
-    Serial.print("acc: "); Serial.println(imclc.getAcc());
+    //Serial.print("diss: "); Serial.println(imclc.getDistance());
   }
    staticTime++;
   if ( staticTime > 500) {

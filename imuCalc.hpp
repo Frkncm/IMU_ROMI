@@ -7,12 +7,13 @@
 class imuCalculator {
 
   private:
-
+    uint64_t timer;
     float distance{0};
     float rotation{0};
     float acceleration{0};
     float previousAcc{0};
     float accOffset{OFFSET_VAL};
+
   public:
 
     enum tasks {
@@ -54,6 +55,13 @@ class imuCalculator {
             swap(&arr[j], &arr[j + 1]);
     }
 
+
+    float getDistance(void) {
+      double dt_ = (double)(micros() - timer) / 1000000.0; // Calculate delta time
+      timer = micros();
+      distance += 0.5 * acceleration*dt_*dt_;
+      return distance;
+    }
 
     //we need the acceleration obtained instantaneously
     boolean updateAcc(float acc, imuDirection dr ) {
