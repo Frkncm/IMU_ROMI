@@ -2,20 +2,20 @@
 #define _IMU_CALC_
 
 #define ARR_SIZE 10
-#define OFFSET_VAL 1.8
+#define OFFSET_VAL 1.5
 
 class imuCalculator {
 
   private:
     uint64_t timer;
-    float distance{0};
-    float velocity{0};
     float rotation{0};
-    float acceleration{0};
     float previousAcc{0};
     float accOffset{OFFSET_VAL};
 
   public:
+    float acceleration{0};
+    float distance{0};
+    float velocity{0};
 
     enum tasks {
       DETECT_ACCELERATION,
@@ -39,70 +39,29 @@ class imuCalculator {
     auto getAcc()->float {
       return acceleration;
     }
-    void swap(float * const xp, float * const yp)
-    {
-      int temp = *xp;
-      *xp = *yp;
-      *yp = temp;
-    }
 
-    void bubbleSort(float arr[], uint8_t n)
-    {
-      int i, j;
-      for (i = 0; i < n - 1; i++)
-        // Last i elements are already in place
-        for (j = 0; j < n - i - 1; j++)
-          if (arr[j] > arr[j + 1])
-            swap(&arr[j], &arr[j + 1]);
-    }
-
-    float getVelocity(float acc) {
+    void calcVelDist() {
       double dt_ = (double)(micros() - timer) / 1000000.0; // Calculate delta time
       timer = micros();
-      velocity = acc * dt_;
-      return velocity;
-    }
-
-    float getDistance(void) {
-      double dt_ = (double)(micros() - timer) / 1000000.0; // Calculate delta time
-      timer = micros();
-      distance += 0.5 * acceleration * dt_ * dt_;
-      return distance;
+      velocity = acceleration * dt_ * 10;
+      distance += 0.5 * velocity * dt_;
     }
 
     //we need the acceleration obtained instantaneously
     boolean updateAcc(float acc, imuDirection dr ) {
-      //try to find the changes of acc between previous value
-      static float accArr[ARR_SIZE] = {0};
-      static uint8_t indx = 0;
 
-      //push back
-      for (int i = 0; i < (ARR_SIZE - 1); i++) {
-        accArr[i] = accArr[i + 1];
-      }
-
-      bubbleSort(accArr, ARR_SIZE);
+      calcVelDist();
 
       if (dr == FORWARD) {
-        if ( (accArr[ARR_SIZE - 1] - accArr[0]) > accOffset) {
-          //if acceleration has a plateu, it is the max rate
-          if (accArr[indx] > 0) {
-            acceleration = accArr[indx];
-            if ( previousAcc > acceleration)
-              acceleration = previousAcc;
-            previousAcc = acceleration;
-          }
-          accArr[indx++] = acc;
-          if (indx >= ARR_SIZE)
-            indx = ARR_SIZE - 1;
-          if (( accArr[indx] < 0) || (accArr[indx] < accArr[indx - 1]))
-            return false;
+        if ((acc > accOffset) && (acc > 0)) {
+          acceleration = acc;
+          if ( previousAcc > acceleration)
+            acceleration = previousAcc;
+          previousAcc = acceleration;
           return true;
-        } else {
-          accArr[indx++] = acc;
-          if (indx >= ARR_SIZE)
-            indx = ARR_SIZE - 1;
         }
+      } else if (dr == STOP) {
+
       }
       return false;
     }

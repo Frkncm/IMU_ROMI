@@ -39,13 +39,15 @@ void imuTask(void) {
   //Serial.print(cmp.getFilteredY()); Serial.println(" ");
   //Serial.print(cmp.getFilteredZ()); Serial.println();
   imclc.updateAcc(cmp.getFilteredY(), imuCalculator::FORWARD);
-  Serial.println(imclc.getAcc());
+  Serial.print(" Velocity: ");Serial.println(imclc.velocity);
+  Serial.print(" Distance: ");Serial.print(imclc.distance);
   
   staticTime++;
   if ( staticTime > 500 && staticTime < 700) {
     leftMotor.motorControl(-60);
     rightMotor.motorControl(-60);
   } else {
+    imclc.acceleration = 0.0;
     leftMotor.motorControl(0);
     rightMotor.motorControl(0);
   }
