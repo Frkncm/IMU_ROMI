@@ -2,13 +2,14 @@
 #define _IMU_CALC_
 
 #define ARR_SIZE 10
-#define OFFSET_VAL 2.0
+#define OFFSET_VAL 1.8
 
 class imuCalculator {
 
   private:
     uint64_t timer;
     float distance{0};
+    float velocity{0};
     float rotation{0};
     float acceleration{0};
     float previousAcc{0};
@@ -24,6 +25,7 @@ class imuCalculator {
       FORWARD,
       BACKWARD,
       ROTATION,
+      STOP
     };
 
     imuCalculator() {
@@ -48,18 +50,23 @@ class imuCalculator {
     {
       int i, j;
       for (i = 0; i < n - 1; i++)
-
         // Last i elements are already in place
         for (j = 0; j < n - i - 1; j++)
           if (arr[j] > arr[j + 1])
             swap(&arr[j], &arr[j + 1]);
     }
 
+    float getVelocity(float acc) {
+      double dt_ = (double)(micros() - timer) / 1000000.0; // Calculate delta time
+      timer = micros();
+      velocity = acc * dt_;
+      return velocity;
+    }
 
     float getDistance(void) {
       double dt_ = (double)(micros() - timer) / 1000000.0; // Calculate delta time
       timer = micros();
-      distance += 0.5 * acceleration*dt_*dt_;
+      distance += 0.5 * acceleration * dt_ * dt_;
       return distance;
     }
 
@@ -69,6 +76,7 @@ class imuCalculator {
       static float accArr[ARR_SIZE] = {0};
       static uint8_t indx = 0;
 
+      //push back
       for (int i = 0; i < (ARR_SIZE - 1); i++) {
         accArr[i] = accArr[i + 1];
       }
@@ -96,7 +104,6 @@ class imuCalculator {
             indx = ARR_SIZE - 1;
         }
       }
-
       return false;
     }
 
