@@ -1,6 +1,8 @@
 #ifndef _COMPLEMENTARY_FILTER_
 #define _COMPLEMENTARY_FILTER_
 
+#define WEIGHT 0.93
+
 template<typename cls>
 class ComplementFilter {
 
@@ -15,7 +17,7 @@ class ComplementFilter {
     double compAngleX_, compAngleY_, compAngleZ_; // Calculated angle using a complementary filter
     double kalAngleX_, kalAngleY_, kalAngleZ_; // Calculated angle using a Kalman filter
 
-    float weight_combination = 0.93;
+    float weight_combination = WEIGHT;
 
   public:
 
@@ -87,3 +89,4 @@ class ComplementFilter {
 };
 
 #endif
+

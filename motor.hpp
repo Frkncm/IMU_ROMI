@@ -33,12 +33,12 @@ public:
 	{
 		/* if client enter higher speeds, assign it 
 		   max permissible speed */
-		if (abs(motor_power) > 25 ) {
+		if (abs(motor_power) > 50 ) {
 			//Serial.print("non-valid values have been entered!");
 			if(motor_power < 0)
-				motor_power = -25;
+				motor_power = -50;
 			else if (motor_power > 0)
-				motor_power = 25;
+				motor_power = 50;
 		}
 		if (motor_power > 0) {
 			digitalWrite(motor_dir_pin, HIGH);
@@ -71,3 +71,4 @@ public:
 
 
 #endif _MOTOR_H_
+

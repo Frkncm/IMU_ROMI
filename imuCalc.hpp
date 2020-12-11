@@ -1,38 +1,28 @@
 #ifndef _IMU_CALC_
 #define _IMU_CALC_
 
-#define ARR_SIZE 10
-#define OFFSET_VAL 1.5
+#define VEL_GAIN   10
+#define OFFSET_DOWN_VAL 2.0
+#define OFFSET_UP_VAL 3.0
 
 class imuCalculator {
 
   private:
     uint64_t timer;
     float rotation{0};
-    float previousAcc{0};
-    float accOffset{OFFSET_VAL};
-
+    float accOffsetDown{OFFSET_DOWN_VAL};
+    float accOffsetUp{OFFSET_UP_VAL};
   public:
     float acceleration{0};
     float distance{0};
     float velocity{0};
 
-    enum tasks {
-      DETECT_ACCELERATION,
-      TASK_DONE,
-    };
-    enum imuDirection {
-      FORWARD,
-      BACKWARD,
-      ROTATION,
-      STOP
-    };
-
     imuCalculator() {
-
+      //default ctor.
     }
 
-    imuCalculator(float offset) : accOffset{offset} {
+    imuCalculator(float offsetUp, float offsetDown) :
+      accOffsetUp{offsetUp}, accOffsetDown{offsetDown}  {
 
     }
 
@@ -43,29 +33,68 @@ class imuCalculator {
     void calcVelDist() {
       double dt_ = (double)(micros() - timer) / 1000000.0; // Calculate delta time
       timer = micros();
-      velocity = acceleration * dt_ * 10;
+      velocity =  acceleration * dt_ * VEL_GAIN;
       distance += 0.5 * velocity * dt_;
     }
 
-    //we need the acceleration obtained instantaneously
-    boolean updateAcc(float acc, imuDirection dr ) {
+    bool getAccelMean(float acc) {
+      //Get the mean of value between two limit.
+      static float collectValue{ 0 };
+      static int numberReading{ 0 };
+      static bool trigger{ false };
 
+      //Update the distance and velocity params
       calcVelDist();
-
-      if (dr == FORWARD) {
-        if ((acc > accOffset) && (acc > 0)) {
-          acceleration = acc;
-          if ( previousAcc > acceleration)
-            acceleration = previousAcc;
-          previousAcc = acceleration;
+      if ((acc > accOffsetDown) && (acc < accOffsetUp)) {
+        trigger = true;
+        collectValue += acc;
+        numberReading++;
+        return true;
+      } else {
+        if (trigger && (acc < accOffsetDown)) {
+          //get the mean of values
+          collectValue /= (float)numberReading;
+          acceleration = collectValue;
+          //Reset number of reading val
+          numberReading = 0;
+          collectValue = 0;
+          trigger = false;
           return true;
         }
-      } else if (dr == STOP) {
-
       }
       return false;
     }
 
+    //we need the acceleration obtained instantaneously
+    float getRotation(float rot, float desiredAngle) {
+      static float initialAngle{ 0 };
+      static bool  enterTrigger{ true };
+
+      if (enterTrigger) {
+        initialAngle = rot;
+        enterTrigger = false;
+      }
+
+      if (desiredAngle > 0) {
+        //Check whether angle difference exceed the desired angle
+        if (desiredAngle > (rot - initialAngle)) {
+          rotation = rot;
+        } else {
+          enterTrigger = true;
+          return rotation;
+        }
+      } else if (desiredAngle < 0) {
+        //Check whether angle difference exceed the desired angle
+        if (desiredAngle < (rot - initialAngle)) {
+          rotation = rot;
+        }
+        else {
+          enterTrigger = true;
+          return rotation;
+        }
+      }
+    }
 };
 
 #endif _IMU_CALC_
+
