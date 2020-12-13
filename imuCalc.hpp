@@ -1,21 +1,25 @@
 #ifndef _IMU_CALC_
 #define _IMU_CALC_
 
-#define VEL_GAIN   10
+#define VEL_GAIN   10000
 #define OFFSET_DOWN_VAL 2.0
 #define OFFSET_UP_VAL 3.0
+#define ANG_COEF 0.07
+#define IMU_MSPEED 40
+#define ROT_MEAN 44.15
 
 class imuCalculator {
 
   private:
     uint64_t timer;
-    float rotation{0};
     float accOffsetDown{OFFSET_DOWN_VAL};
     float accOffsetUp{OFFSET_UP_VAL};
   public:
     float acceleration{0};
     float distance{0};
     float velocity{0};
+    float rotation{0};
+    float Xnew{0}, Ynew {0}; // Y - coordinate
 
     imuCalculator() {
       //default ctor.
@@ -35,6 +39,26 @@ class imuCalculator {
       timer = micros();
       velocity =  acceleration * dt_ * VEL_GAIN;
       distance += 0.5 * velocity * dt_;
+    }
+
+    void getCoordinate (float rot, float acc) {
+      //calculate x - y position
+      static float last_distance {0};
+      getAccelMean(acc);
+      updateRotation(rot);
+      Ynew += (distance - last_distance) * sin(rotation * PI / 180);
+      Xnew += (distance - last_distance) * cos(rotation * PI / 180);
+      last_distance = distance;
+    }
+
+    float updateRotation(float rot) {
+      //get the real-time rotation value
+      if ((rot - ROT_MEAN) > 1.0) {
+        rotation += (rot - ROT_MEAN) * ANG_COEF;
+      } else if ((rot - ROT_MEAN) < -1.0 ) {
+        rotation += (rot - ROT_MEAN) * ANG_COEF;
+      }
+      return rotation;
     }
 
     bool getAccelMean(float acc) {
@@ -65,36 +89,43 @@ class imuCalculator {
       return false;
     }
 
-    //we need the acceleration obtained instantaneously
-    float getRotation(float rot, float desiredAngle) {
+    boolean turnDegree(float rot, float desiredAngle) {
       static float initialAngle{ 0 };
+      static float locRot{ 0 };
       static bool  enterTrigger{ true };
 
       if (enterTrigger) {
-        initialAngle = rot;
+        locRot = 0;
+        //calTime = 0;
+        //locTime = micros();
+        initialAngle = rot * ANG_COEF;
         enterTrigger = false;
       }
 
+      rotation += (rot * ANG_COEF - initialAngle);
+
       if (desiredAngle > 0) {
-        //Check whether angle difference exceed the desired angle
-        if (desiredAngle > (rot - initialAngle)) {
-          rotation = rot;
+        //compare the angle difference for positive values
+        if (desiredAngle > rotation) {
+          return false;
         } else {
           enterTrigger = true;
-          return rotation;
+          return true;
         }
       } else if (desiredAngle < 0) {
-        //Check whether angle difference exceed the desired angle
-        if (desiredAngle < (rot - initialAngle)) {
-          rotation = rot;
+        //compare the angle difference for positive values
+        if (desiredAngle <= rotation) {
+          return false;
         }
         else {
           enterTrigger = true;
-          return rotation;
+          return true;
         }
       }
+      return false;
     }
 };
 
 #endif _IMU_CALC_
+
 

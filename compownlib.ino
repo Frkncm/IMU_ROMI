@@ -29,21 +29,47 @@ void imuTask(void) {
   //update the filter values
   cmp.updateFilter();
   //get the mean of accel.
-  imclc.getAccelMean(cmp.getFilteredY());
-
-  Serial.print(cmp.getFilteredX()); Serial.print(" ");
-  Serial.print(cmp.getFilteredY()); Serial.print(" ");
-  Serial.print(cmp.getFilteredZ()); Serial.println(" ");
+  //Serial.print(cmp.getFilteredX()); Serial.print(" ");
+  //Serial.print(cmp.getFilteredY()); Serial.print(" ");
+  //Serial.print(cmp.getFilteredZ()); Serial.println(" ");
   //Serial.print(imclc.acceleration); Serial.println(" ");
-/*
-  Serial.print(" Velocity: "); Serial.print(imclc.velocity);
-  Serial.print(" Distance: "); Serial.print(imclc.distance);
-  Serial.print(" Mean acc: "); Serial.println(imclc.acceleration);
+  Serial.print("X: "); Serial.print(imclc.Xnew);
+  Serial.print(" Y: "); Serial.print(imclc.Ynew);
+  Serial.print(" D: "); Serial.println(imclc.distance);
+  Serial.print(" R: "); Serial.println(imclc.rotation);
+  imclc.getCoordinate(cmp.getFilteredZ(), cmp.getFilteredY());
+  /*
+    staticTime++;
+    static bool isEntered = false;
+    if ( staticTime > 400 && staticTime < 650) {
+    //This code snippet is designed for checking the acc, velocity
+    //distance in a certain time.
+    if (!imclc.getRotation(cmp.getFilteredZ(), 90) && !isEntered) {
+    float v = pidMotor.updateValue(IMU_MSPEED, imclc.velocity);
+    leftMotor.motorControl(IMU_MSPEED);
+    rightMotor.motorControl(-IMU_MSPEED);
+    } else {
+    isEntered = true;
+    imclc.acceleration = 0.0;
+    leftMotor.motorControl(0);
+    rightMotor.motorControl(0);
+    }
+    } else {
+    imclc.acceleration = 0.0;
+    leftMotor.motorControl(0);
+    rightMotor.motorControl(0);
+    }
 
+
+    Serial.print(" Velocity: "); Serial.print(imclc.velocity);
+    Serial.print(" Distance: "); Serial.print(imclc.distance);
+    Serial.print(" Mean acc: "); Serial.println(imclc.acceleration);
+  */
   staticTime++;
   if ( staticTime > 500 && staticTime < 650) {
     //This code snippet is designed for checking the acc, velocity
     //distance in a certain time.
+    imclc.getCoordinate(cmp.getFilteredZ(), cmp.getFilteredY());
     float v = pidMotor.updateValue(40, imclc.velocity);
     leftMotor.motorControl(v);
     rightMotor.motorControl(v);
@@ -52,7 +78,7 @@ void imuTask(void) {
     leftMotor.motorControl(0);
     rightMotor.motorControl(0);
   }
-  */
+
 }
 
 void setup() {
@@ -68,6 +94,13 @@ void setup() {
   imu.enableDefault();
   delay(1000); // Wait for sensor to stabilize
   pidMotor.reset();
+
+  for (int i = 0; i < 1000; i++) {
+    //wait till sensor stabilize
+    cmp.updateFilter();
+    imclc.rotation = 0;
+  }
+
 }
 
 void loop() {
