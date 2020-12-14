@@ -4,9 +4,9 @@
 #define VEL_GAIN   10000
 #define OFFSET_DOWN_VAL 1.5
 #define OFFSET_UP_VAL 5.0
-#define ANG_COEF 0.1
+#define ANG_COEF 0.13
 #define ROT_MEAN 44.15
-#define ROT_LIMIT 0.25
+#define ROT_LIMIT 1.0
 
 class imuCalculator {
 

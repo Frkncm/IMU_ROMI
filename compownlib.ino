@@ -7,9 +7,9 @@
 #include "imuCalc.hpp"
 #include "Romi.h"
 
-#define KP_VAL 1.0   // increase response time, but it'll increase oscillation also
-#define KI_VAL 0.5   // minimise the total error 
-#define KD_VAL 1.0   // if there is a huge changing
+#define KP_VAL 30.0   // increase response time, but it'll increase oscillation also
+#define KI_VAL 0.15   // minimise the total error 
+#define KD_VAL 0.8   // if there is a huge changing
 
 #define SQUARE_DISTANCE 500
 
@@ -31,15 +31,26 @@ myMotor<uint8_t> rightMotor(R_DIR_PIN, R_PWM_PIN);
 
 PID pidMotor(KP_VAL, KI_VAL, KD_VAL);
 
+PID H_PID(KP_VAL, KI_VAL, KD_VAL);
+PID L_PID(KP_VAL, KI_VAL, KD_VAL);
+PID R_PID(KP_VAL, KI_VAL, KD_VAL);
+
 int8_t turnRight = 1;
 int8_t turnLeft  = 1;
 
 uint8_t countTask{ 0 };
 
+float bearing {0};
+
+float driveStraight(float theta_demand) {
+  return H_PID.updateValue(0 , (atan((theta_demand - imclc.rotation) * PI / 180.0)));
+}
+
 //square implementation
 bool taskHandler() {
   if (countTask == 0) {
     if (imclc.Xnew <= SQUARE_DISTANCE) {
+      bearing = driveStraight(0);
       return false;
     }
     else {
@@ -48,6 +59,7 @@ bool taskHandler() {
     }
   } else if (countTask == 1) {
     if (imclc.Ynew >= -SQUARE_DISTANCE) {
+      bearing = driveStraight(-90);
       return false;
     }
     else {
@@ -56,6 +68,7 @@ bool taskHandler() {
     }
   } else if (countTask == 2) {
     if (imclc.Xnew >= 0) {
+      bearing = driveStraight(-180);
       return false;
     }
     else {
@@ -64,6 +77,7 @@ bool taskHandler() {
     }
   } else if (countTask == 3) {
     if (imclc.Ynew <= 0) {
+      bearing = driveStraight(-270);
       return false;
     }
     else {
@@ -86,19 +100,20 @@ void imuTask(void) {
   //get the coordinate using IMU sensor parameters
   imclc.getCoordinate(cmp.getFilteredZ(), cmp.getFilteredY());
 
-  /*
-    Serial.print("X: ");  Serial.print(imclc.Xnew);
-    Serial.print(" Y: "); Serial.print(imclc.Ynew);
-    Serial.print(" D: "); Serial.print(imclc.distance);
-    Serial.print(" R: "); Serial.println(imclc.rotation);
-  */
+
+  Serial.print(" X: "); Serial.print(imclc.Xnew);
+  Serial.print(" Y: "); Serial.print(imclc.Ynew);
+  Serial.print(" D: "); Serial.print(imclc.distance);
+  Serial.print(" R: "); Serial.print(imclc.rotation);
+  Serial.print(" B: "); Serial.println(bearing);
   //Send values trough bluetooth
   bthc05.print(imclc.Ynew); bthc05.print("\t");
   bthc05.print(imclc.Xnew); bthc05.print("\t");
-  bthc05.println(imclc.rotation);
+  bthc05.print(imclc.rotation); bthc05.print("\t");
+  bthc05.println(bearing);
 
-  leftMotor.motorControl(turnLeft * -35);
-  rightMotor.motorControl(turnRight * -35);
+  leftMotor.motorControl(turnLeft * -45 + bearing);
+  rightMotor.motorControl(turnRight * -45 - bearing);
 
 }
 
@@ -116,7 +131,7 @@ void setup() {
   delay(1000); // Wait for sensor to stabilize
   pidMotor.reset();
 
-  delay(4000);
+  //delay(4000);
 
   for (int i = 0; i < 1000; i++) {
     //wait till sensor stabilize
