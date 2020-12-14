@@ -32,5 +32,26 @@ unsigned long taskInsert::getElapsedTime(void) {
   return elapsed_time;
 }
 
+boolean nonBlockingDelay(unsigned long dly) {
+
+  static unsigned long delay_last_timestamp = 0;
+  static boolean is_entered_first = true;
+
+  if (is_entered_first) {
+    delay_last_timestamp = millis();
+    is_entered_first = false;
+  }
+
+  unsigned long delay_time_now = millis();
+  if ((delay_time_now - delay_last_timestamp) > dly)
+  {
+    is_entered_first = true;
+    return true;
+  }
+  else {
+    return false;
+  }
+
+}
 
 

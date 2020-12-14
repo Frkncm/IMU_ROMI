@@ -2,11 +2,11 @@
 #define _IMU_CALC_
 
 #define VEL_GAIN   10000
-#define OFFSET_DOWN_VAL 2.0
+#define OFFSET_DOWN_VAL 1.0
 #define OFFSET_UP_VAL 3.0
-#define ANG_COEF 0.07
-#define IMU_MSPEED 40
+#define ANG_COEF 0.0965
 #define ROT_MEAN 44.15
+#define ROT_LIMIT 0.5
 
 class imuCalculator {
 
@@ -51,14 +51,10 @@ class imuCalculator {
       last_distance = distance;
     }
 
-    float updateRotation(float rot) {
-      //get the real-time rotation value
-      if ((rot - ROT_MEAN) > 1.0) {
-        rotation += (rot - ROT_MEAN) * ANG_COEF;
-      } else if ((rot - ROT_MEAN) < -1.0 ) {
+    void updateRotation(float rot) {
+      if (((rot - ROT_MEAN) > ROT_LIMIT) || ((rot - ROT_MEAN) < -ROT_LIMIT)) {
         rotation += (rot - ROT_MEAN) * ANG_COEF;
       }
-      return rotation;
     }
 
     bool getAccelMean(float acc) {
@@ -89,24 +85,22 @@ class imuCalculator {
       return false;
     }
 
-    boolean turnDegree(float rot, float desiredAngle) {
+    boolean turnDegree(float desiredAngle) {
       static float initialAngle{ 0 };
-      static float locRot{ 0 };
       static bool  enterTrigger{ true };
 
       if (enterTrigger) {
-        locRot = 0;
-        //calTime = 0;
-        //locTime = micros();
-        initialAngle = rot * ANG_COEF;
+        initialAngle = rotation;
         enterTrigger = false;
       }
 
-      rotation += (rot * ANG_COEF - initialAngle);
-
+      float locAngle = (rotation - initialAngle);
+      Serial.print("initial Val:"); Serial.print(initialAngle);
+      Serial.print("locAngle:"); Serial.println(locAngle);
+      
       if (desiredAngle > 0) {
         //compare the angle difference for positive values
-        if (desiredAngle > rotation) {
+        if (desiredAngle > locAngle) {
           return false;
         } else {
           enterTrigger = true;
@@ -114,7 +108,7 @@ class imuCalculator {
         }
       } else if (desiredAngle < 0) {
         //compare the angle difference for positive values
-        if (desiredAngle <= rotation) {
+        if (desiredAngle < locAngle) {
           return false;
         }
         else {

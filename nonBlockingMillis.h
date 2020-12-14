@@ -8,6 +8,8 @@
    non-blocking mechanism, but in more convinient
    way */
 
+boolean nonBlockingDelay(unsigned long dly);
+
 class taskInsert {
   private:
   	//we will use a function pointer to be able to implement
