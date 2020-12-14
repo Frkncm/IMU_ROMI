@@ -11,7 +11,7 @@
 #define KI_VAL 0.5   // minimise the total error 
 #define KD_VAL 1.0   // if there is a huge changing
 
-#define SQUARE_DISTANCE 300
+#define SQUARE_DISTANCE 500
 
 LSM6 imu;
 ComplementFilter<LSM6> cmp(imu);
@@ -97,9 +97,8 @@ void imuTask(void) {
   bthc05.print(imclc.Xnew); bthc05.print("\t");
   bthc05.println(imclc.rotation);
 
-  //float v = pidMotor.updateValue(30, imclc.velocity);
-  leftMotor.motorControl(turnLeft * -30);
-  rightMotor.motorControl(turnRight * -30);
+  leftMotor.motorControl(turnLeft * -35);
+  rightMotor.motorControl(turnRight * -35);
 
 }
 

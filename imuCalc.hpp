@@ -2,11 +2,11 @@
 #define _IMU_CALC_
 
 #define VEL_GAIN   10000
-#define OFFSET_DOWN_VAL 1.0
-#define OFFSET_UP_VAL 3.0
-#define ANG_COEF 0.0965
+#define OFFSET_DOWN_VAL 1.5
+#define OFFSET_UP_VAL 5.0
+#define ANG_COEF 0.1
 #define ROT_MEAN 44.15
-#define ROT_LIMIT 0.5
+#define ROT_LIMIT 0.25
 
 class imuCalculator {
 
@@ -95,8 +95,6 @@ class imuCalculator {
       }
 
       float locAngle = (rotation - initialAngle);
-      Serial.print("initial Val:"); Serial.print(initialAngle);
-      Serial.print("locAngle:"); Serial.println(locAngle);
       
       if (desiredAngle > 0) {
         //compare the angle difference for positive values
