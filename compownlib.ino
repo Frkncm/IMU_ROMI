@@ -7,11 +7,15 @@
 #include "imuCalc.hpp"
 #include "Romi.h"
 
+#define _SPEED_ 45
+
 #define KP_VAL 30.0   // increase response time, but it'll increase oscillation also
 #define KI_VAL 0.15   // minimise the total error 
 #define KD_VAL 0.8   // if there is a huge changing
 
 #define SQUARE_DISTANCE 500
+
+#define SEND_DATA 1
 
 LSM6 imu;
 ComplementFilter<LSM6> cmp(imu);
@@ -100,7 +104,7 @@ void imuTask(void) {
   //get the coordinate using IMU sensor parameters
   imclc.getCoordinate(cmp.getFilteredZ(), cmp.getFilteredY());
 
-
+#if SEND_DATA
   Serial.print(" X: "); Serial.print(imclc.Xnew);
   Serial.print(" Y: "); Serial.print(imclc.Ynew);
   Serial.print(" D: "); Serial.print(imclc.distance);
@@ -111,9 +115,10 @@ void imuTask(void) {
   bthc05.print(imclc.Xnew); bthc05.print("\t");
   bthc05.print(imclc.rotation); bthc05.print("\t");
   bthc05.println(bearing);
+#endif
 
-  leftMotor.motorControl(turnLeft * -45 + bearing);
-  rightMotor.motorControl(turnRight * -45 - bearing);
+  leftMotor.motorControl(turnLeft * -_SPEED_ + bearing);
+  rightMotor.motorControl(turnRight * -_SPEED_ - bearing);
 
 }
 
